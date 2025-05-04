@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #3B82F6;
+  --color-secondary: #10B981;
+  --color-dark: #1E293B;
+  --color-light: #F8FAFC;
+}
+
+body {
+  @apply bg-slate-50 font-sans;
+  font-family: 'Inter', sans-serif;
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg transition-all duration-300 font-medium;
+  }
+  
+  .btn-primary {
+    background-color: var(--color-primary);
+    @apply text-white;
+  }
+  
+  .btn-primary:hover {
+    background-color: #2563EB;
+  }
+  
+  .btn-secondary {
+    background-color: var(--color-secondary);
+    @apply text-white;
+  }
+  
+  .btn-secondary:hover {
+    background-color: #059669;
+  }
+  
+  .btn-outline {
+    border: 2px solid var(--color-primary);
+    color: var(--color-primary);
+  }
+  
+  .btn-outline:hover {
+    background-color: var(--color-primary);
+    @apply text-white;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-md p-6 transition-all duration-300 hover:shadow-lg;
+  }
+  
+  .text-primary {
+    color: var(--color-primary);
+  }
+  
+  .text-secondary {
+    color: var(--color-secondary);
+  }
+  
+  .text-dark {
+    color: var(--color-dark);
+  }
+  
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+  
+  .bg-secondary {
+    background-color: var(--color-secondary);
+  }
+  
+  .bg-light {
+    background-color: var(--color-light);
+  }
+  
+  .border-primary {
+    border-color: var(--color-primary);
+  }
+}
