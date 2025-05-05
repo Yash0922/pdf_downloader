@@ -5,13 +5,12 @@ import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   // Replace with your Firebase config
-  apiKey: "AIzaSyADM9wJs1JC21ne9NVlziTjUinKcRGUvtM",
-  authDomain: "pdf-downloader-674b6.firebaseapp.com",
-  projectId: "pdf-downloader-674b6",
-  storageBucket: "pdf-downloader-674b6.firebasestorage.app",
-  messagingSenderId: "201402845829",
-  appId: "1:201402845829:web:7a6177862bdde14603b7ec",
-  measurementId: "G-1J2565VRBJ"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase/config';
 import { pdfjs, Document, Page } from 'react-pdf';
 import { FiDownload, FiArrowLeft, FiChevronLeft, FiChevronRight, FiMaximize, FiMinimize } from 'react-icons/fi';
+import { FiCheck } from 'react-icons/fi';
+import { pdfApi } from '../services/api';
 
 // Set the worker source
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
@@ -21,43 +20,22 @@ const PDFViewer = ({ user }) => {
   const [scale, setScale] = useState(1);
   const [downloading, setDownloading] = useState(false);
 
-  // Sample PDF data (replace with actual Firebase fetching)
-  const samplePdf = {
-    id: id,
-    title: 'User Guide',
-    description: 'Comprehensive user guide for the application',
-    size: '2.4 MB',
-    createdAt: new Date('2024-03-15'),
-    downloadCount: 45,
-    path: 'pdfs/user-guide.pdf',
-  };
-
   useEffect(() => {
-    // In a real app, fetch from Firebase
-    setTimeout(() => {
-      setPdf(samplePdf);
-      setPdfUrl("https://arxiv.org/pdf/1708.08021.pdf"); // Sample PDF URL for demo
-      setLoading(false);
-    }, 1000);
-    
-    // Actual Firebase implementation would be:
-    /*
     const fetchPdf = async () => {
       try {
-        const pdfDoc = doc(db, 'pdfs', id);
-        const pdfSnapshot = await getDoc(pdfDoc);
+        setLoading(true);
         
-        if (pdfSnapshot.exists()) {
-          const pdfData = { id: pdfSnapshot.id, ...pdfSnapshot.data() };
-          setPdf(pdfData);
-          
-          // Get download URL
-          const fileRef = ref(storage, pdfData.path);
-          const url = await getDownloadURL(fileRef);
-          setPdfUrl(url);
-        } else {
-          setError('PDF not found');
-        }
+        // Get PDF details
+        const response = await pdfApi.getById(id);
+        setPdf(response.data.data);
+        
+        // For preview, we'll use the same download endpoint but create a temporary URL
+        const downloadResponse = await pdfApi.download(id);
+        const blob = new Blob([downloadResponse.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        setPdfUrl(url);
+        
+        setError(null);
       } catch (err) {
         console.error('Error fetching PDF:', err);
         setError('Failed to load PDF. Please try again later.');
@@ -67,7 +45,13 @@ const PDFViewer = ({ user }) => {
     };
     
     fetchPdf();
-    */
+    
+    // Clean up URL when component unmounts
+    return () => {
+      if (pdfUrl) {
+        window.URL.revokeObjectURL(pdfUrl);
+      }
+    };
   }, [id]);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
@@ -76,11 +60,25 @@ const PDFViewer = ({ user }) => {
   };
 
   const handleDownload = async () => {
-    setDownloading(true);
-    
-    // Simulate download delay
-    setTimeout(() => {
-      setDownloading(false);
+    try {
+      setDownloading(true);
+      
+      const response = await pdfApi.download(id);
+      
+      // Create a blob URL for the file
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create an anchor element and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = pdf.title + '.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
       
       // Show success notification
       const notification = document.getElementById('download-notification');
@@ -88,31 +86,12 @@ const PDFViewer = ({ user }) => {
       setTimeout(() => {
         notification.classList.add('hidden');
       }, 3000);
-    }, 1500);
-    
-    // Actual Firebase implementation would be:
-    /*
-    try {
-      setDownloading(true);
-      
-      // Create an anchor element and trigger download
-      const a = document.createElement('a');
-      a.href = pdfUrl;
-      a.download = pdf.title + '.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      // Update download count in Firestore
-      // ...
-      
     } catch (err) {
       console.error('Error downloading PDF:', err);
       setError('Failed to download PDF. Please try again.');
     } finally {
       setDownloading(false);
     }
-    */
   };
 
   const goToPrevPage = () => {

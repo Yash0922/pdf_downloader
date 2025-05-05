@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase/config';
-import { 
-  FiDownload, FiFile, FiSearch, FiCheck, FiEye, FiInfo, FiAlertCircle 
-} from 'react-icons/fi';
+import { FiDownload, FiFile, FiSearch, FiCheck, FiEye, FiInfo, FiAlertCircle } from 'react-icons/fi';
+import { pdfApi } from '../services/api';
 
 const Dashboard = ({ user }) => {
   const [pdfs, setPdfs] = useState([]);
@@ -14,79 +10,14 @@ const Dashboard = ({ user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [downloading, setDownloading] = useState({});
 
-  // Sample PDF data (replace with actual Firebase fetching)
-  const samplePdfs = [
-    {
-      id: '1',
-      title: 'User Guide',
-      description: 'Comprehensive user guide for the application',
-      size: '2.4 MB',
-      createdAt: new Date('2024-03-15'),
-      downloadCount: 45,
-      path: 'pdfs/user-guide.pdf',
-      thumbnail: 'https://via.placeholder.com/100x140'
-    },
-    {
-      id: '2',
-      title: 'Technical Documentation',
-      description: 'Technical specifications and API documentation',
-      size: '3.8 MB',
-      createdAt: new Date('2024-04-10'),
-      downloadCount: 23,
-      path: 'pdfs/technical-docs.pdf',
-      thumbnail: 'https://via.placeholder.com/100x140'
-    },
-    {
-      id: '3',
-      title: 'Monthly Report - April 2024',
-      description: 'Financial and operational report for April 2024',
-      size: '1.2 MB',
-      createdAt: new Date('2024-05-01'),
-      downloadCount: 12,
-      path: 'pdfs/april-report.pdf',
-      thumbnail: 'https://via.placeholder.com/100x140'
-    },
-    {
-      id: '4',
-      title: 'Product Brochure',
-      description: 'Marketing brochure with product information',
-      size: '5.7 MB',
-      createdAt: new Date('2024-04-22'),
-      downloadCount: 67,
-      path: 'pdfs/brochure.pdf',
-      thumbnail: 'https://via.placeholder.com/100x140'
-    },
-    {
-      id: '5',
-      title: 'Research Paper',
-      description: 'Academic research paper on modern technology',
-      size: '2.9 MB',
-      createdAt: new Date('2024-03-27'),
-      downloadCount: 31,
-      path: 'pdfs/research.pdf',
-      thumbnail: 'https://via.placeholder.com/100x140'
-    },
-  ];
-
-  // Fetch PDFs from Firestore
+  // Fetch PDFs from backend API
   useEffect(() => {
-    // In a real app, fetch from Firebase
-    setTimeout(() => {
-      setPdfs(samplePdfs);
-      setLoading(false);
-    }, 1000);
-    
-    // Actual Firebase implementation would be:
-    /*
     const fetchPdfs = async () => {
       try {
-        const pdfCollection = collection(db, 'pdfs');
-        const pdfSnapshot = await getDocs(pdfCollection);
-        const pdfList = pdfSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setPdfs(pdfList);
+        setLoading(true);
+        const response = await pdfApi.getAll();
+        setPdfs(response.data.data);
+        setError(null);
       } catch (err) {
         console.error('Error fetching PDFs:', err);
         setError('Failed to load PDFs. Please try again later.');
@@ -96,30 +27,18 @@ const Dashboard = ({ user }) => {
     };
     
     fetchPdfs();
-    */
   }, []);
 
   const handleDownload = async (pdf) => {
-    setDownloading(prev => ({ ...prev, [pdf.id]: true }));
-    
-    // Simulate download delay
-    setTimeout(() => {
-      setDownloading(prev => ({ ...prev, [pdf.id]: false }));
-      
-      // Show success notification
-      const notification = document.getElementById('download-notification');
-      notification.classList.remove('hidden');
-      setTimeout(() => {
-        notification.classList.add('hidden');
-      }, 3000);
-    }, 1500);
-    
-    // Actual Firebase implementation would be:
-    /*
     try {
-      setDownloading(prev => ({ ...prev, [pdf.id]: true }));
-      const fileRef = ref(storage, pdf.path);
-      const url = await getDownloadURL(fileRef);
+      setDownloading(prev => ({ ...prev, [pdf._id]: true }));
+      
+      // Call the download API
+      const response = await pdfApi.download(pdf._id);
+      
+      // Create a blob URL for the file
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       
       // Create an anchor element and trigger download
       const a = document.createElement('a');
@@ -129,16 +48,21 @@ const Dashboard = ({ user }) => {
       a.click();
       document.body.removeChild(a);
       
-      // Update download count in Firestore
-      // ...
+      // Clean up
+      window.URL.revokeObjectURL(url);
       
+      // Show success notification
+      const notification = document.getElementById('download-notification');
+      notification.classList.remove('hidden');
+      setTimeout(() => {
+        notification.classList.add('hidden');
+      }, 3000);
     } catch (err) {
       console.error('Error downloading PDF:', err);
       setError('Failed to download PDF. Please try again.');
     } finally {
-      setDownloading(prev => ({ ...prev, [pdf.id]: false }));
+      setDownloading(prev => ({ ...prev, [pdf._id]: false }));
     }
-    */
   };
 
   // Filter PDFs based on search term
@@ -196,14 +120,16 @@ const Dashboard = ({ user }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPdfs.length > 0 ? (
           filteredPdfs.map((pdf) => (
-            <div key={pdf.id} className="card hover:shadow-xl flex flex-col h-full">
+            <div key={pdf._id} className="card hover:shadow-xl flex flex-col h-full">
               <div className="flex items-start mb-4">
                 <div className="flex-shrink-0 h-16 w-12 bg-gray-200 rounded flex items-center justify-center">
                   <FiFile className="h-6 w-6 text-gray-500" />
                 </div>
                 <div className="ml-4 flex-1">
                   <h3 className="text-lg font-semibold text-dark">{pdf.title}</h3>
-                  <p className="text-sm text-gray-500 mb-1">{pdf.size} • {pdf.createdAt.toLocaleDateString()}</p>
+                  <p className="text-sm text-gray-500 mb-1">
+                    {pdf.size} • {new Date(pdf.createdAt).toLocaleDateString()}
+                  </p>
                   <div className="flex items-center text-xs text-gray-500">
                     <FiDownload className="h-3 w-3 mr-1" />
                     <span>{pdf.downloadCount} downloads</span>
@@ -215,7 +141,7 @@ const Dashboard = ({ user }) => {
               
               <div className="flex flex-wrap gap-2 mt-auto">
                 <Link 
-                  to={`/pdf/${pdf.id}`} 
+                  to={`/pdf/${pdf._id}`} 
                   className="flex items-center justify-center text-sm px-3 py-1.5 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
                 >
                   <FiEye className="h-4 w-4 mr-1" />
@@ -224,10 +150,10 @@ const Dashboard = ({ user }) => {
                 
                 <button 
                   onClick={() => handleDownload(pdf)}
-                  disabled={downloading[pdf.id]}
+                  disabled={downloading[pdf._id]}
                   className="flex items-center justify-center text-sm px-3 py-1.5 rounded bg-primary text-white hover:bg-blue-600 flex-grow"
                 >
-                  {downloading[pdf.id] ? (
+                  {downloading[pdf._id] ? (
                     <>
                       <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></span>
                       Downloading...
