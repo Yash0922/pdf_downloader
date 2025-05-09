@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { getAuth } from 'firebase/auth';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://pdf-vault-backend.onrender.com/api';
 
 // Create axios instance
 const api = axios.create({
