@@ -31,10 +31,12 @@ function App() {
           
           // Store the token in localStorage (consider more secure options in production)
           localStorage.setItem('authToken', token);
+
+          console.log('User token:', token);
           
           // Fetch user role from your backend when user logs in
           // This is a simplified example. In a real app, you would use your userApi.getProfile()
-          const response = await fetch('http://localhost:5000/api/users/me', {
+          const response = await fetch('https://pdf-vault-backend.onrender.com/api/users/me', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
