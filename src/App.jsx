@@ -36,7 +36,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
           
           // Fetch user role from your backend when user logs in
           // This is a simplified example. In a real app, you would use your userApi.getProfile()
-          const response = await fetch(`${API_URL}/api/users/me`, {
+          const response = await fetch(`${API_URL}/users/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
