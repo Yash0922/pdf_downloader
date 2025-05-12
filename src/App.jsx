@@ -19,7 +19,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState(null);
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -36,7 +36,7 @@ function App() {
           
           // Fetch user role from your backend when user logs in
           // This is a simplified example. In a real app, you would use your userApi.getProfile()
-          const response = await fetch('http://localhost:5000/api/users/me', {
+          const response = await fetch(`${API_URL}/api/users/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
