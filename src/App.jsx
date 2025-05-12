@@ -14,7 +14,7 @@ import Dashboard from './pages/Dashboard';
 import PDFViewer from './pages/PDFViewer';
 import NotFound from './pages/NotFound';
 import AdminPanel from './components/AdminPanel';
-
+import PaymentSuccess from './pages/PaymentSuccess';
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ function App() {
           
           // Fetch user role from your backend when user logs in
           // This is a simplified example. In a real app, you would use your userApi.getProfile()
-          const response = await fetch('https://pdf-vault-backend.onrender.com/api/users/me', {
+          const response = await fetch('http://localhost:5000/api/users/me', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -92,6 +92,7 @@ function App() {
         <Navbar user={user} userRole={userRole} />
         <main className="flex-grow">
           <Routes>
+            <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/" element={<Home user={user} />} />
             <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
             <Route 

@@ -1,8 +1,7 @@
-// src/services/api.js
 import axios from 'axios';
 import { getAuth } from 'firebase/auth';
 
-const API_URL = 'https://pdf-vault-backend.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -41,16 +40,31 @@ export const pdfApi = {
   getById: (id) => api.get(`/pdfs/${id}`),
   
   // Download a PDF
-  download: (id) => api.get(`/pdfs/download/${id}`, { responseType: 'blob' }),
+  download: (id) => api.get(`/pdfs/download/${id}`, { 
+    responseType: 'blob',
+    timeout: 30000 // Increase timeout for larger files
+  }),
   
-  // Upload a new PDF (admin only)
+  // Upload a new PDF
   upload: (formData) => {
     return api.post('/pdfs', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
-  }
+  },
+  
+  // Delete a PDF
+  delete: (id) => api.delete(`/pdfs/${id}`),
+  
+  // Create payment session for a PDF
+  createPaymentSession: (id) => api.get(`/pdfs/payment-session/${id}`),
+  
+  // Verify payment for a PDF
+  verifyPayment: (orderId, pdfId) => api.post(`/pdfs/verify-payment`, { orderId, pdfId }),
+  
+  // Check file status (for debugging)
+  checkFileStatus: (id) => api.get(`/pdfs/check-file/${id}`)
 };
 
 // User API
@@ -61,9 +75,6 @@ export const userApi = {
   // Update user profile
   updateProfile: (data) => api.put('/users/me', data),
   
-  // Purchase a PDF
-  purchasePdf: (pdfId) => api.post(`/users/purchase/${pdfId}`),
-  
   // Get user's purchase history
   getPurchases: () => api.get('/users/purchases'),
   
@@ -71,22 +82,58 @@ export const userApi = {
   getDownloads: () => api.get('/users/downloads')
 };
 
-// Admin API
-export const adminApi = {
-  // Get dashboard statistics
-  getDashboardStats: () => api.get('/admin/dashboard'),
+// Auth API
+export const authApi = {
+  // Register user
+  register: (data) => api.post('/auth/register', data),
   
-  // Get all users
-  getAllUsers: () => api.get('/admin/users'),
+  // Login user
+  login: (data) => api.post('/auth/login', data),
   
-  // Update user role
-  updateUserRole: (userId, role) => api.put(`/admin/users/${userId}/role`, { role }),
+  // Verify email
+  verifyEmail: (token) => api.get(`/auth/verify-email/${token}`),
   
-  // Get download statistics
-  getDownloadStats: () => api.get('/admin/stats/downloads'),
+  // Reset password
+  resetPassword: (data) => api.post('/auth/reset-password', data),
   
-  // Get revenue statistics
-  getRevenueStats: () => api.get('/admin/stats/revenue')
+  // Send password reset email
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email })
 };
+
+// Add a global error handler
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', error.response?.data || error.message);
+    
+    // For download errors, pass through the error
+    if (error.config?.responseType === 'blob') {
+      return Promise.reject(error);
+    }
+    
+    // If the error is a blob, convert it to JSON
+    if (error.response?.data instanceof Blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            error.response.data = JSON.parse(reader.result);
+            reject(error);
+          } catch (e) {
+            error.response.data = { message: 'An unknown error occurred' };
+            reject(error);
+          }
+        };
+        reader.onerror = () => {
+          error.response.data = { message: 'An unknown error occurred' };
+          reject(error);
+        };
+        reader.readAsText(error.response.data);
+      });
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 export default api;
